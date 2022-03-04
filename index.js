@@ -2,8 +2,6 @@ const express = require('express')
 const app = express()
 const fs = require('fs')
 
-
-
 app.listen(3000, () => {
 	console.log('Server running on port 3000')
 })
@@ -30,7 +28,7 @@ app.get('/recipes/details/:id', (req, res, next) => {
 	const recipeData = fs.readFileSync('data.json', 'utf8')
 	// then parse data into object
 	const recipeObject = JSON.parse(recipeData)
-	// create empty list for recipes
+	// create list of the 1 item matching the query, if it exists
 	const chosenRecipe = recipeObject.recipes.filter((recipe) => {
 		return (recipe.name === req.params.id)
 	})
@@ -45,4 +43,37 @@ app.get('/recipes/details/:id', (req, res, next) => {
 	}
 	// send list of ingredients to requester
 	res.json(ingredientList)
+})
+
+// post request to add a recipe
+app.use(
+	express.urlencoded({
+		extended: true
+	})
+)
+app.use(express.json())
+app.post('/recipes', (req, res) => {
+	console.log('body: ', req.body)
+	// first get recipe data from data.json
+	const recipeData = fs.readFileSync('data.json', 'utf8')
+	// then parse data into object
+	const recipeObject = JSON.parse(recipeData)
+	// create list of the 1 item matching the query, if it exists
+	const chosenRecipe = recipeObject.recipes.filter((recipe) => {
+		return (recipe.name === req.body.name)
+	})
+	if (chosenRecipe.length > 0) {
+		res.status(400).send('{"error": "Recipe already exists}')
+	} else {
+		recipeObject.recipes.push(req.body)
+		fs.writeFile('./data.json', JSON.stringify(recipeObject), err => {
+			if (err) {
+				console.error(err)
+				res.json(err)
+				return
+			}
+			res.status(201).send('big success')
+		})
+	}
+
 })
