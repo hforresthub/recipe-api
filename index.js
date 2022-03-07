@@ -53,7 +53,6 @@ app.use(
 )
 app.use(express.json())
 app.post('/recipes', (req, res) => {
-	console.log('body: ', req.body)
 	// first get recipe data from data.json
 	const recipeData = fs.readFileSync('data.json', 'utf8')
 	// then parse data into object
@@ -75,5 +74,30 @@ app.post('/recipes', (req, res) => {
 			res.status(201).send('big success')
 		})
 	}
+})
 
+app.put('/recipes', (req, res) => {
+	// first get recipe data from data.json
+	const recipeData = fs.readFileSync('data.json', 'utf8')
+	// then parse data into object
+	const recipeObject = JSON.parse(recipeData)
+	let indexOfEdit = -1
+	// create list of the 1 item matching the query, if it exists
+	const chosenRecipe = recipeObject.recipes.filter((recipe, index) => {
+		indexOfEdit = index
+		return (recipe.name === req.body.name)
+	})
+	if (chosenRecipe.length === 0) {
+		res.status(404).send('{"error": "Recipe does not exist"}')
+	} else {
+		recipeObject.recipes.splice(indexOfEdit, 1, req.body)
+		fs.writeFile('./data.json', JSON.stringify(recipeObject), err => {
+			if (err) {
+				console.error(err)
+				res.json(err)
+				return
+			}
+			res.status(204).send('big success')
+		})
+	}
 })
